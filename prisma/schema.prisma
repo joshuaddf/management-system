@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  kindeUserId String    @unique
+  email       String    @unique
+  firstName   String?
+  lastName    String?
+  role        String?   
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  student     Student?  @relation("UserToStudent")
+  teacher     Teacher?  @relation("UserToTeacher")
+  parent      Parent?   @relation("UserToParent")
+  payments    Payment[] @relation("UserPayments")
+}
+
+model Student {
+  id                 String               @id @default(uuid())
+  studentId          String               @unique
+  course             String
+  subjectsUndertaken SubjectsUndertaken[]
+  year               Int
+  parents            Parent[]             @relation("StudentParent")
+  userId             String               @unique
+  user               User                 @relation("UserToStudent", fields: [userId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model SubjectsUndertaken {
+  id          String   @id @default(uuid())
+  subjectCode String
+  studentId   String
+  subjectName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     Student  @relation(fields: [studentId], references: [id])
+  @@index([studentId])
+}
+
+model Teacher {
+  id             String           @id @default(uuid())
+  teacherId      String           @unique
+  subjectsTaught SubjectsTaught[]
+  userId         String           @unique
+  user           User             @relation("UserToTeacher", fields: [userId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model SubjectsTaught {
+  id          String   @id @default(uuid())
+  subjectCode String
+  teacherId   String
+  subjectName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  @@index([teacherId])
+}
+
+model Parent {
+  id          String         @id @default(uuid())
+  phoneNumber String
+  wards       Student[]      @relation("StudentParent")
+  userId      String         @unique
+  user        User           @relation("UserToParent", fields: [userId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  amount      Float    @db.DoublePrecision
+  date        DateTime @db.Timestamp(3)
+  userId      String
+  user        User     @relation("UserPayments", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdAt   DateTime @db.Timestamp(3) @default(now())
+  updatedAt   DateTime @db.Timestamp(3) @updatedAt
+  @@index([userId])
+}
