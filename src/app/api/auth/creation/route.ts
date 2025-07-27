@@ -6,7 +6,9 @@ export async function GET() {
     const { getUser } = await getKindeServerSession();
     const user = await getUser();
 
-    if ( user === null || !user || !user.id) throw new Response("User not found");
+    if (user === null || !user || !user.id) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+}
 
     let dbUser = await prisma.user.findUnique({
         where: {
